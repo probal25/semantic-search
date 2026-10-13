@@ -1,0 +1,17 @@
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: semantic-search-db
+    environment:
+      POSTGRES_DB: semantic_search
+      POSTGRES_USER: search_user
+      POSTGRES_PASSWORD: local_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
