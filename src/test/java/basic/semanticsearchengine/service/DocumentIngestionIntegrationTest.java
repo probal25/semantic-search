@@ -59,7 +59,7 @@ class DocumentIngestionIntegrationTest {
                     embeddingClient.getEmbeddingResult(query);
 
             List<SearchResult> results =
-                    repository.search(queryEmbedding, 100);
+                    repository.search(queryEmbedding, 100, .50);
 
             // 6. Confirm the ingested document appears in search results.
             assertTrue(
@@ -101,7 +101,7 @@ class DocumentIngestionIntegrationTest {
                     embeddingClient.getEmbeddingResult(query);
 
             List<SearchResult> results =
-                    repository.search(queryEmbedding, 100);
+                    repository.search(queryEmbedding, 100, 0.0);
 
             SearchResult relevantResult = findResult(results, relevantText);
             SearchResult relatedResult = findResult(results, relatedText);

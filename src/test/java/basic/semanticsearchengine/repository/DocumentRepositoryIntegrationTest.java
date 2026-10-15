@@ -88,7 +88,7 @@ class DocumentRepositoryIntegrationTest {
             // Search beyond the two expected test documents because
             // the development database already contains other records.
             List<SearchResult> results =
-                    repository.search(queryVector, 100);
+                    repository.search(queryVector, 100, 0.0);
 
             SearchResult exactResult = findResult(results, exactMatch);
             SearchResult similarResult = findResult(results, similarContent);

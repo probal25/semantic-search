@@ -72,11 +72,24 @@ public class DocumentRepository {
         }
     }
 
-    public List<SearchResult> search(double[] queryVector, int limit) {
+    public List<SearchResult> search(
+            double[] queryVector,
+            int limit,
+            double minSimilarity) {
+
+        if (limit <= 0) {
+            throw new IllegalArgumentException("limit must be greater than 0");
+        }
+
+        if (minSimilarity < 0.0 || minSimilarity > 1.0) {
+            throw new IllegalArgumentException(
+                    "minSimilarity must be between 0.0 and 1.0");
+        }
+
         String sql = """
-                SELECT content,
-                       1 - (embedding <=> CAST(? AS vector)) AS similarity
+                SELECT content, 1 - (embedding <=> CAST(? AS vector)) AS similarity
                 FROM documents
+                WHERE 1 - (embedding <=> CAST(? AS vector)) >= ?
                 ORDER BY embedding <=> CAST(? AS vector)
                 LIMIT ?
                 """;
@@ -89,7 +102,9 @@ public class DocumentRepository {
 
             statement.setString(1, vector);
             statement.setString(2, vector);
-            statement.setInt(3, limit);
+            statement.setDouble(3, minSimilarity);
+            statement.setString(4, vector);
+            statement.setInt(5, limit);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {

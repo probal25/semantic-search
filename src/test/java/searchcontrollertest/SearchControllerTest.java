@@ -1,12 +1,10 @@
 package searchcontrollertest;
-
 import basic.semanticsearchengine.controller.SearchController;
 import basic.semanticsearchengine.domain.model.Document;
 import basic.semanticsearchengine.domain.model.SearchResult;
 import basic.semanticsearchengine.domain.request.SearchRequest;
 import basic.semanticsearchengine.domain.response.SearchResponse;
-import basic.semanticsearchengine.embedding.GenerateEmbeddings;
-import basic.semanticsearchengine.repository.DocumentRepository;
+import basic.semanticsearchengine.service.SearchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,61 +24,58 @@ import static org.mockito.Mockito.when;
 class SearchControllerTest {
 
     @Mock
-    private GenerateEmbeddings embeddingClient;
-
-    @Mock
-    private DocumentRepository repository;
+    private SearchService searchService;
 
     @InjectMocks
     private SearchController controller;
 
     @Test
     void searchReturnsMatchingDocuments() throws Exception {
-        // Arrange: define the fake embedding and database result
-        double[] queryVector = {0.1, 0.2, 0.3};
+        // Arrange
+        Document document = new Document(
+                "My payment failed",
+                new double[0]
+        );
 
-        when(embeddingClient.getEmbeddingResult("payment failed"))
-                .thenReturn(queryVector);
-
-        Document document = new Document("My payment failed", new double[0]);
         SearchResult result = new SearchResult(document, 0.95);
 
-        when(repository.search(queryVector, 5))
+        when(searchService.search("payment failed", 5))
                 .thenReturn(List.of(result));
 
         SearchRequest request = new SearchRequest();
         request.setQuery("payment failed");
         request.setLimit(5);
 
-        // Act: execute the controller method
+        // Act
         List<SearchResponse> responses = controller.search(request);
 
-        // Assert: check the response
+        // Assert
         assertEquals(1, responses.size());
         assertEquals("My payment failed", responses.get(0).getText());
         assertEquals(0.95, responses.get(0).getScore(), 0.000001);
 
-        verify(embeddingClient).getEmbeddingResult("payment failed");
-        verify(repository).search(queryVector, 5);
+        verify(searchService).search("payment failed", 5);
     }
 
     @Test
     void searchPropagatesEmbeddingFailure() throws Exception {
+        // Arrange
         SearchRequest request = new SearchRequest();
         request.setQuery("payment failed");
         request.setLimit(5);
 
-        when(embeddingClient.getEmbeddingResult("payment failed"))
+        when(searchService.search("payment failed", 5))
                 .thenThrow(new IOException("Ollama is unavailable"));
 
+        // Act
         IOException exception = assertThrows(
                 IOException.class,
                 () -> controller.search(request)
         );
 
+        // Assert
         assertEquals("Ollama is unavailable", exception.getMessage());
-
-        verify(repository, org.mockito.Mockito.never())
-                .search(org.mockito.ArgumentMatchers.any(double[].class), org.mockito.ArgumentMatchers.anyInt());
+        verify(searchService).search("payment failed", 5);
     }
+
 }

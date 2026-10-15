@@ -1,0 +1,51 @@
+
+[
+  {
+    "id": "D1",
+    "content": "My debit card payment was declined by the bank."
+  },
+  {
+    "id": "D2",
+    "content": "I cannot complete a purchase using my credit card."
+  },
+  {
+    "id": "D3",
+    "content": "The weather is sunny and birds are singing."
+  },
+  {
+    "id": "D4",
+    "content": "The transaction failed because my bank account has insufficient funds."
+  },
+  {
+    "id": "D5",
+    "content": "My credit card has expired and the payment was rejected."
+  },
+  {
+    "id": "D6",
+    "content": "The payment gateway timed out while processing my transaction."
+  },
+  {
+    "id": "D7",
+    "content": "I received a refund for my online purchase yesterday."
+  },
+  {
+    "id": "D8",
+    "content": "The football match was postponed because of heavy rain."
+  },
+  {
+    "id": "D9",
+    "content": "My bank application crashes whenever I try to log in."
+  },
+  {
+    "id": "D10",
+    "content": "The restaurant charged my card twice for the same order."
+  },
+  {
+    "id": "D11",
+    "content": "A network timeout occurred while loading the weather forecast."
+  },
+  {
+    "id": "D12",
+    "content": "My payment succeeded, but the merchant says the order is unpaid."
+  }
+]

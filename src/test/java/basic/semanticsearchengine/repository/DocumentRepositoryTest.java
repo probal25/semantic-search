@@ -120,7 +120,7 @@ class DocumentRepositoryTest {
 
         DatabaseOperationException exception = assertThrows(
                 DatabaseOperationException.class,
-                () -> repository.search(new double[768], 5)
+                () -> repository.search(new double[768], 5, 0.50)
         );
 
         assertEquals("Failed to search documents", exception.getMessage());
@@ -146,7 +146,7 @@ class DocumentRepositoryTest {
 
         DocumentRepository repository = new DocumentRepository(dataSource);
 
-        List<SearchResult> results = repository.search(new double[768], 5);
+        List<SearchResult> results = repository.search(new double[768], 5, 0.50);
 
         assertEquals(1, results.size());
         assertEquals(
@@ -209,5 +209,53 @@ class DocumentRepositoryTest {
         );
         assertInstanceOf(SQLException.class, exception.getCause());
         assertEquals("Read failed", exception.getCause().getMessage());
+    }
+
+    @Test
+    void rejectsZeroLimitBeforeAccessingDatabase() throws SQLException {
+
+        DataSource dataSource = mock(DataSource.class);
+
+        when(dataSource.getConnection())
+                .thenThrow(new SQLException("Connection refused"));
+
+        DocumentRepository repository = new DocumentRepository(dataSource);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> repository.search(new double[768], 0, 0.50)
+        );
+    }
+
+    @Test
+    void rejectsSimilarityAboveOneBeforeAccessingDatabase() throws SQLException {
+
+        DataSource dataSource = mock(DataSource.class);
+
+        when(dataSource.getConnection())
+                .thenThrow(new SQLException("Connection refused"));
+
+        DocumentRepository repository = new DocumentRepository(dataSource);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> repository.search(new double[768], 3, 1.01)
+        );
+    }
+
+    @Test
+    void rejectsNegativeSimilarityThreshold() throws SQLException {
+
+        DataSource dataSource = mock(DataSource.class);
+
+        when(dataSource.getConnection())
+                .thenThrow(new SQLException("Connection refused"));
+
+        DocumentRepository repository = new DocumentRepository(dataSource);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> repository.search(new double[768], 3, -0.01)
+        );
     }
 }
