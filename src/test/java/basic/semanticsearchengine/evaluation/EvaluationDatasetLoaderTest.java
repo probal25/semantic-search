@@ -17,13 +17,13 @@ class EvaluationDatasetLoaderTest {
     void loadsSearchCases() throws IOException {
         List<SearchCase> cases = loader.loadSearchCases();
 
-        assertEquals(4, cases.size());
+        assertEquals(8, cases.size());
         assertEquals(
                 "Why did my bank card payment fail?",
                 cases.get(0).query()
         );
         assertEquals(
-                List.of("D1", "D2", "D4", "D5", "D6", "D10"),
+                List.of("D1", "D2", "D4", "D5", "D6"),
                 cases.get(0).relevantDocumentIds()
         );
     }

@@ -13,7 +13,17 @@ class SearchEvaluatorTest {
     private SearchEvaluator searchEvaluator;
 
     @Test
-    void evaluatesSemanticSearchQuality() {
+    void evaluatesSemanticSearchQualityLimitSix() {
         assertDoesNotThrow(() -> searchEvaluator.evaluate(6));
+    }
+
+    @Test
+    void evaluatesSemanticSearchQualityLimitTen() {
+        assertDoesNotThrow(() -> searchEvaluator.evaluate(10));
+    }
+
+    @Test
+    void evaluatesSemanticSearchQualityLimitTwenty() {
+        assertDoesNotThrow(() -> searchEvaluator.evaluate(20));
     }
 }

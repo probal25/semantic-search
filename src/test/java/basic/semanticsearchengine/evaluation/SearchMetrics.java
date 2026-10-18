@@ -56,6 +56,19 @@ public class SearchMetrics {
         return (double) relevantRetrieved / retrievedIds.size();
     }
 
+    public double reciprocalRank(
+            List<String> retrievedDocumentIds,
+            Set<String> relevantDocumentIds) {
+
+        for (int i = 0; i < retrievedDocumentIds.size(); i++) {
+            if (relevantDocumentIds.contains(retrievedDocumentIds.get(i))) {
+                return 1.0 / (i + 1);
+            }
+        }
+
+        return 0.0;
+    }
+
     private int countRelevantRetrieved(
             List<String> retrievedDocumentIds,
             Set<String> relevantDocumentIds,

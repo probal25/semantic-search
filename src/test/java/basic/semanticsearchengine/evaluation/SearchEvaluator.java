@@ -18,16 +18,19 @@ public class SearchEvaluator {
     private final DocumentRepository repository;
     private final SearchService searchService;
     private final SearchMetrics metrics;
+    private final EvaluationDatasetValidator datasetValidator;
 
     public SearchEvaluator(
             EvaluationDatasetLoader datasetLoader,
             DocumentIngestionService ingestionService,
             DocumentRepository repository,
-            SearchService searchService) {
+            SearchService searchService,
+            EvaluationDatasetValidator datasetValidator) {
         this.datasetLoader = datasetLoader;
         this.ingestionService = ingestionService;
         this.repository = repository;
         this.searchService = searchService;
+        this.datasetValidator = datasetValidator;
         this.metrics = new SearchMetrics();
     }
 
@@ -40,17 +43,21 @@ public class SearchEvaluator {
         List<SearchCase> searchCases =
                 datasetLoader.loadSearchCases();
 
+        datasetValidator.validate(documents, searchCases);
+
         EvaluationDocumentIndex index =
                 new EvaluationDocumentIndex(documents);
 
         List<String> insertedByThisRun = new ArrayList<>();
 
         Map<Double, Double> precisionTotals = new LinkedHashMap<>();
+        Map<Double, Double> reciprocalRankTotals = new LinkedHashMap<>();
         Map<Double, Double> recallTotals = new LinkedHashMap<>();
         Map<Double, Double> returnedPrecisionTotals = new LinkedHashMap<>();
         Map<Double, Double> precisionAt1Totals = new LinkedHashMap<>();
 
-        List<Double> thresholds = List.of(0.0, 0.4, 0.5, 0.6);
+        List<Double> thresholds = List.of(0.5);
+//        List<Double> thresholds = List.of(0.0, 0.4, 0.5, 0.6);
 
         try {
             // Ingest only documents that do not already exist.
@@ -86,11 +93,20 @@ public class SearchEvaluator {
                     for (int i = 0; i < results.size(); i++) {
                         SearchResult result = results.get(i);
 
+                        String documentId = index.findIdByContent(
+                                result.getDocument().getText());
+
+                        boolean relevant = searchCase.relevantDocumentIds()
+                                .contains(documentId);
+
                         System.out.printf(
-                                "Rank %d | Score: %.4f | Document: %s%n",
+                                "Rank %d | Cosine: %.4f | Rerank: %.4f | ID: %s | Document: %s%n",
                                 i + 1,
                                 result.getScore(),
-                                result.getDocument().getText());
+                                result.getRerankingScore(),
+                                documentId,
+                                result.getDocument().getText()
+                        );
                     }
 
                     System.out.printf(
@@ -114,6 +130,15 @@ public class SearchEvaluator {
 
                     double precisionAt1 =
                             metrics.precisionAtK(retrievedIds, relevantIds, 1);
+
+                    double reciprocalRank = relevantIds.isEmpty()
+                            ? Double.NaN
+                            : metrics.reciprocalRank(retrievedIds, relevantIds);
+
+                    if (!Double.isNaN(reciprocalRank)) {
+                        reciprocalRankTotals.merge(
+                                threshold, reciprocalRank, Double::sum);
+                    }
 
                     double returnedPrecision =
                             SearchMetrics.precisionAmongReturned(
@@ -149,10 +174,20 @@ public class SearchEvaluator {
                                 !searchCase.relevantDocumentIds().isEmpty())
                         .count();
 
+                long mrrQueryCount = searchCases.stream()
+                        .filter(searchCase ->
+                                !searchCase.relevantDocumentIds().isEmpty())
+                        .count();
+
                 double averageRecall = recallQueryCount == 0
                         ? Double.NaN
                         : recallTotals.getOrDefault(threshold, 0.0)
                         / recallQueryCount;
+
+                double averageMrr = mrrQueryCount == 0
+                        ? Double.NaN
+                        : reciprocalRankTotals.getOrDefault(threshold, 0.0)
+                        / mrrQueryCount;
 
                 double emptyResultRate =
                         100.0 * emptyResultCount / queryCount;
@@ -162,6 +197,7 @@ public class SearchEvaluator {
                                 "Avg Precision@1: %.3f | " +
                                 "Avg Precision@%d: %.3f | " +
                                 "Avg Recall@%d: %.3f | " +
+                                "MRR: %.3f | " +
                                 "Avg Precision among returned: %.3f | " +
                                 "Empty-result rate: %.1f%%%n",
                         threshold,
@@ -170,6 +206,7 @@ public class SearchEvaluator {
                         precisionTotals.get(threshold) / queryCount,
                         k,
                         averageRecall,
+                        averageMrr,
                         returnedPrecisionTotals.get(threshold) / queryCount,
                         emptyResultRate);
             }

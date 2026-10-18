@@ -1,15 +1,28 @@
 [
   {
     "query": "Why did my bank card payment fail?",
-    "relevantDocumentIds": ["D1", "D2", "D4", "D5", "D6"]
+    "relevantDocumentIds": [
+      "D1",
+      "D2",
+      "D4",
+      "D5",
+      "D6"
+    ]
   },
   {
     "query": "I cannot buy something with my card",
-    "relevantDocumentIds": ["D1", "D2", "D4", "D5"]
+    "relevantDocumentIds": [
+      "D1",
+      "D2",
+      "D4",
+      "D5"
+    ]
   },
   {
     "query": "What is the weather like?",
-    "relevantDocumentIds": ["D3"]
+    "relevantDocumentIds": [
+      "D3"
+    ]
   },
   {
     "query": "How do I repair a broken bicycle chain?",
@@ -17,14 +30,26 @@
   },
   {
     "query": "My online payment is still pending",
-    "relevantDocumentIds": ["D6", "D12"]
+    "relevantDocumentIds": [
+      "D6",
+      "D12"
+    ]
   },
   {
     "query": "I was charged twice for one purchase",
-    "relevantDocumentIds": ["D10"]
+    "relevantDocumentIds": [
+      "D10"
+    ]
   },
   {
     "query": "How can I grow tomatoes in my garden?",
     "relevantDocumentIds": []
+  },
+  {
+    "query": "My payment transaction has not completed yet and is awaiting confirmation",
+    "relevantDocumentIds": [
+      "D6",
+      "D12"
+    ]
   }
 ]

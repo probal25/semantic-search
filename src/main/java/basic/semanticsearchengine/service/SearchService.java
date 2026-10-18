@@ -15,23 +15,30 @@ public class SearchService {
 
     private final GenerateEmbeddings embeddingClient;
     private final DocumentRepository repository;
+    private final DocumentReranker reranker;
 
     @Value("${search.min-similarity:0.50}")
     private double minSimilarity;
 
+    @Value("${search.reranking.enabled:false}")
+    private boolean rerankingEnabled;
+
+    @Value("${search.candidate-limit:10}")
+    private int candidateLimit;
+
     public SearchService(
             GenerateEmbeddings embeddingClient,
-            DocumentRepository repository) {
+            DocumentRepository repository,
+            DocumentReranker reranker) {
         this.embeddingClient = embeddingClient;
         this.repository = repository;
+        this.reranker = reranker;
     }
 
     public List<SearchResult> search(String query, int limit)
             throws IOException, InterruptedException, SQLException {
 
-        double[] queryVector = embeddingClient.getEmbeddingResult(query);
-
-        return repository.search(queryVector, limit, minSimilarity);
+        return search(query, limit, minSimilarity);
     }
 
     public List<SearchResult> search(
@@ -40,8 +47,26 @@ public class SearchService {
             double threshold)
             throws IOException, InterruptedException, SQLException {
 
-        double[] queryVector = embeddingClient.getEmbeddingResult(query);
+        if (limit <= 0) {
+            throw new IllegalArgumentException(
+                    "limit must be greater than 0");
+        }
 
-        return repository.search(queryVector, limit, threshold);
+        double[] queryVector =
+                embeddingClient.getEmbeddingResult(query);
+
+        if (!rerankingEnabled) {
+            return repository.search(queryVector, limit, threshold);
+        }
+
+        int candidatesToFetch = Math.max(limit, candidateLimit);
+
+        List<SearchResult> candidates =
+                repository.search(queryVector, candidatesToFetch, threshold);
+
+        return reranker.rerank(query, candidates)
+                .stream()
+                .limit(limit)
+                .toList();
     }
 }

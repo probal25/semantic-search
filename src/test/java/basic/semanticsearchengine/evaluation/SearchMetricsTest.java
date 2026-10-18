@@ -149,4 +149,52 @@ class SearchMetricsTest {
                 metrics.precisionAtK(retrievedIds, relevantIds, 1)
         );
     }
+
+    @Test
+    void calculatesReciprocalRankWhenFirstResultIsRelevant() {
+        List<String> retrieved = List.of("D1", "D3", "D2");
+        Set<String> relevant = Set.of("D1", "D2");
+
+        assertEquals(
+                1.0,
+                metrics.reciprocalRank(retrieved, relevant),
+                0.0001
+        );
+    }
+
+    @Test
+    void calculatesReciprocalRankWhenRelevantResultIsSecond() {
+        List<String> retrieved = List.of("D3", "D1", "D2");
+        Set<String> relevant = Set.of("D1", "D2");
+
+        assertEquals(
+                0.5,
+                metrics.reciprocalRank(retrieved, relevant),
+                0.0001
+        );
+    }
+
+    @Test
+    void returnsZeroReciprocalRankWhenNoRelevantResultExists() {
+        List<String> retrieved = List.of("D3", "D4");
+        Set<String> relevant = Set.of("D1", "D2");
+
+        assertEquals(
+                0.0,
+                metrics.reciprocalRank(retrieved, relevant),
+                0.0001
+        );
+    }
+
+    @Test
+    void precisionAtKDoesNotCountDuplicateDocumentsTwice() {
+        List<String> retrieved = List.of("D1", "D1", "D2");
+        Set<String> relevant = Set.of("D1", "D2");
+
+        double precision = metrics.precisionAtK(
+                retrieved, relevant, 3
+        );
+
+        assertEquals(2.0 / 3.0, precision, 0.0001);
+    }
 }
