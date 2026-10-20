@@ -1,55 +1,64 @@
+
 [
   {
     "query": "Why did my bank card payment fail?",
-    "relevantDocumentIds": [
-      "D1",
-      "D2",
-      "D4",
-      "D5",
-      "D6"
-    ]
+    "relevantDocumentIds": ["D1", "D2", "D4", "D5", "D6"],
+    "relevanceGrades": {
+      "D1": 3,
+      "D2": 2,
+      "D4": 3,
+      "D5": 3,
+      "D6": 2
+    }
   },
   {
     "query": "I cannot buy something with my card",
-    "relevantDocumentIds": [
-      "D1",
-      "D2",
-      "D4",
-      "D5"
-    ]
+    "relevantDocumentIds": ["D1", "D2", "D4", "D5"],
+    "relevanceGrades": {
+      "D1": 3,
+      "D2": 3,
+      "D4": 2,
+      "D5": 3
+    }
   },
   {
     "query": "What is the weather like?",
-    "relevantDocumentIds": [
-      "D3"
-    ]
+    "relevantDocumentIds": ["D3"],
+    "relevanceGrades": {
+      "D3": 3
+    }
   },
   {
     "query": "How do I repair a broken bicycle chain?",
-    "relevantDocumentIds": []
+    "relevantDocumentIds": [],
+    "relevanceGrades": {}
   },
   {
     "query": "My online payment is still pending",
-    "relevantDocumentIds": [
-      "D6",
-      "D12"
-    ]
+    "relevantDocumentIds": ["D6", "D12"],
+    "relevanceGrades": {
+      "D6": 3,
+      "D12": 2
+    }
   },
   {
     "query": "I was charged twice for one purchase",
-    "relevantDocumentIds": [
-      "D10"
-    ]
+    "relevantDocumentIds": ["D10"],
+    "relevanceGrades": {
+      "D10": 3
+    }
   },
   {
     "query": "How can I grow tomatoes in my garden?",
-    "relevantDocumentIds": []
+    "relevantDocumentIds": [],
+    "relevanceGrades": {}
   },
   {
     "query": "My payment transaction has not completed yet and is awaiting confirmation",
-    "relevantDocumentIds": [
-      "D6",
-      "D12"
-    ]
+    "relevantDocumentIds": ["D6", "D12"],
+    "relevanceGrades": {
+      "D6": 3,
+      "D12": 2
+    }
   }
 ]

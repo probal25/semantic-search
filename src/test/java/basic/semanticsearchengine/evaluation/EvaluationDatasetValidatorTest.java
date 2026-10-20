@@ -3,6 +3,7 @@ package basic.semanticsearchengine.evaluation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,7 +22,8 @@ class EvaluationDatasetValidatorTest {
         List<SearchCase> searchCases = List.of(
                 new SearchCase(
                         "Why did my payment fail?",
-                        List.of("D1")
+                        List.of("D1"),
+                        Map.of("D1", 3)
                 )
         );
 
@@ -75,7 +77,8 @@ class EvaluationDatasetValidatorTest {
         List<SearchCase> searchCases = List.of(
                 new SearchCase(
                         "Why did my payment fail?",
-                        List.of("D99")
+                        List.of("D99"),
+                        Map.of()
                 )
         );
 

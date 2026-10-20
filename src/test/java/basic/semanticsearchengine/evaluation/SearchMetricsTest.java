@@ -3,6 +3,7 @@ package basic.semanticsearchengine.evaluation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,5 +197,70 @@ class SearchMetricsTest {
         );
 
         assertEquals(2.0 / 3.0, precision, 0.0001);
+    }
+
+    @Test
+    void returnsOneForIdealRanking() {
+        SearchMetrics metrics = new SearchMetrics();
+
+        double result = metrics.ndcgAtK(
+                List.of("D1", "D2", "D3"),
+                Map.of("D1", 3, "D2", 2, "D3", 1),
+                3
+        );
+
+        assertEquals(1.0, result, 1e-9);
+    }
+
+    @Test
+    void scoresLowerWhenRankingIsReversed() {
+        SearchMetrics metrics = new SearchMetrics();
+
+        double result = metrics.ndcgAtK(
+                List.of("D3", "D2", "D1"),
+                Map.of("D1", 3, "D2", 2, "D3", 1),
+                3
+        );
+
+        assertTrue(result > 0.0);
+        assertTrue(result < 1.0);
+    }
+
+    @Test
+    void returnsZeroWhenNoResultsAreRetrieved() {
+        SearchMetrics metrics = new SearchMetrics();
+
+        double result = metrics.ndcgAtK(
+                List.of(),
+                Map.of("D1", 3, "D2", 2),
+                3
+        );
+
+        assertEquals(0.0, result);
+    }
+
+    @Test
+    void duplicateRetrievedDocumentDoesNotImproveNdcg() {
+        SearchMetrics metrics = new SearchMetrics();
+
+        Map<String, Integer> grades = Map.of(
+                "D1", 3,
+                "D2", 2,
+                "D3", 1
+        );
+
+        double normalRanking = metrics.ndcgAtK(
+                List.of("D1", "D2", "D3"),
+                grades,
+                3
+        );
+
+        double duplicatedRanking = metrics.ndcgAtK(
+                List.of("D1", "D1", "D2"),
+                grades,
+                3
+        );
+
+        assertTrue(duplicatedRanking < normalRanking);
     }
 }

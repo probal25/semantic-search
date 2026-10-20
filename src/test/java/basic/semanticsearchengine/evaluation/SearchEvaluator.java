@@ -55,6 +55,7 @@ public class SearchEvaluator {
         Map<Double, Double> recallTotals = new LinkedHashMap<>();
         Map<Double, Double> returnedPrecisionTotals = new LinkedHashMap<>();
         Map<Double, Double> precisionAt1Totals = new LinkedHashMap<>();
+        Map<Double, Double> ndcgTotals = new LinkedHashMap<>();
 
         List<Double> thresholds = List.of(0.5);
 //        List<Double> thresholds = List.of(0.0, 0.4, 0.5, 0.6);
@@ -121,6 +122,18 @@ public class SearchEvaluator {
                     Set<String> relevantIds =
                             new HashSet<>(searchCase.relevantDocumentIds());
 
+                    Map<String, Integer> relevanceGrades =
+                            searchCase.relevanceGrades();
+
+                    double ndcg = relevanceGrades.values().stream()
+                            .anyMatch(grade -> grade > 0)
+                            ? metrics.ndcgAtK(retrievedIds, relevanceGrades, k)
+                            : Double.NaN;
+
+                    if (!Double.isNaN(ndcg)) {
+                        ndcgTotals.merge(threshold, ndcg, Double::sum);
+                    }
+
                     double precision =
                             metrics.precisionAtK(retrievedIds, relevantIds, k);
 
@@ -160,11 +173,14 @@ public class SearchEvaluator {
                             "Query: %s%n" +
                                     "Precision@%d: %.3f%n" +
                                     "Recall@%d: %.3f%n" +
-                                    "Precision among returned: %.3f%n%n",
+                                    "Precision among returned: %.3f%n" +
+                                    "NDCG@%d: %.3f%n%n",
                             searchCase.query(),
                             k, precision,
                             k, recall,
-                            returnedPrecision);
+                            returnedPrecision,
+                            k, ndcg
+                    );
                 }
 
                 int queryCount = searchCases.size();
@@ -189,6 +205,17 @@ public class SearchEvaluator {
                         : reciprocalRankTotals.getOrDefault(threshold, 0.0)
                         / mrrQueryCount;
 
+                long ndcgQueryCount = searchCases.stream()
+                        .filter(searchCase ->
+                                searchCase.relevanceGrades().values().stream()
+                                        .anyMatch(grade -> grade > 0))
+                        .count();
+
+                double averageNdcg = ndcgQueryCount == 0
+                        ? Double.NaN
+                        : ndcgTotals.getOrDefault(threshold, 0.0)
+                        / ndcgQueryCount;
+
                 double emptyResultRate =
                         100.0 * emptyResultCount / queryCount;
 
@@ -199,6 +226,7 @@ public class SearchEvaluator {
                                 "Avg Recall@%d: %.3f | " +
                                 "MRR: %.3f | " +
                                 "Avg Precision among returned: %.3f | " +
+                                "Avg NDCG@6: %.3f | " +
                                 "Empty-result rate: %.1f%%%n",
                         threshold,
                         precisionAt1Totals.get(threshold) / queryCount,
@@ -208,6 +236,7 @@ public class SearchEvaluator {
                         averageRecall,
                         averageMrr,
                         returnedPrecisionTotals.get(threshold) / queryCount,
+                        averageNdcg,
                         emptyResultRate);
             }
         } finally {
