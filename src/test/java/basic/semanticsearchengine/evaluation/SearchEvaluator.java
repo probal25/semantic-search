@@ -97,14 +97,14 @@ public class SearchEvaluator {
                         String documentId = index.findIdByContent(
                                 result.getDocument().getText());
 
-                        boolean relevant = searchCase.relevantDocumentIds()
-                                .contains(documentId);
+                        int relevanceGrade = searchCase.relevanceGrades()
+                                .getOrDefault(documentId, 0);
 
                         System.out.printf(
-                                "Rank %d | Cosine: %.4f | Rerank: %.4f | ID: %s | Document: %s%n",
+                                "Rank %d | Cosine: %.4f | Grade: %d | ID: %s | Document: %s%n",
                                 i + 1,
                                 result.getScore(),
-                                result.getRerankingScore(),
+                                relevanceGrade,
                                 documentId,
                                 result.getDocument().getText()
                         );

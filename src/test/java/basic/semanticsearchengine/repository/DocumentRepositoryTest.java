@@ -258,4 +258,50 @@ class DocumentRepositoryTest {
                 () -> repository.search(new double[768], 3, -0.01)
         );
     }
+
+    @Test
+    void searchByKeywordReturnsDocumentsWithRelevanceScores() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("content"))
+                .thenReturn("The payment gateway timed out.");
+        when(resultSet.getDouble("score")).thenReturn(0.75);
+
+        DocumentRepository repository = new DocumentRepository(dataSource);
+
+        List<SearchResult> results =
+                repository.searchByKeyword("payment timeout", 5);
+
+        assertEquals(1, results.size());
+        assertEquals(
+                "The payment gateway timed out.",
+                results.get(0).getDocument().getText()
+        );
+        assertEquals(0.75, results.get(0).getScore(), 0.0001);
+
+        verify(statement).setString(1, "payment timeout");
+        verify(statement).setString(2, "payment timeout");
+        verify(statement).setInt(3, 5);
+    }
+
+    @Test
+    void searchByKeywordRejectsBlankQuery() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        DocumentRepository repository = new DocumentRepository(dataSource);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> repository.searchByKeyword("  ", 5)
+        );
+
+        verifyNoInteractions(dataSource);
+    }
 }

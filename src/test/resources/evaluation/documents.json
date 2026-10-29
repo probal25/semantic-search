@@ -22,7 +22,7 @@
   },
   {
     "id": "D6",
-    "content": "The payment gateway timed out while processing my transaction."
+    "content": "The payment gateway timed out while processing my transaction. The payment may remain pending or stuck while the transaction is being processed."
   },
   {
     "id": "D7",

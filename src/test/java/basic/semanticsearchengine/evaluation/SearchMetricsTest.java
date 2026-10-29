@@ -76,6 +76,18 @@ class SearchMetricsTest {
     }
 
     @Test
+    void doesNotCountDuplicateRelevantDocumentsTwice() {
+        List<String> retrieved = List.of("D1", "D1", "D2");
+        Set<String> relevant = Set.of("D1", "D2");
+
+        assertEquals(
+                2.0 / 3.0,
+                metrics.precisionAtK(retrieved, relevant, 3),
+                0.0001
+        );
+    }
+
+    @Test
     void rejectsEmptyRelevantSetForRecall() {
         assertThrows(
                 IllegalArgumentException.class,

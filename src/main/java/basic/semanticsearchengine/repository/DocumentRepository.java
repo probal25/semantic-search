@@ -1,3 +1,4 @@
+
 package basic.semanticsearchengine.repository;
 
 import basic.semanticsearchengine.domain.model.Document;
@@ -30,10 +31,12 @@ public class DocumentRepository {
                 """;
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
 
             statement.setString(1, document.getText());
-            statement.setString(2, toVectorString(document.getEmbedding()));
+            statement.setString(
+                    2, toVectorString(document.getEmbedding()));
 
             int rowsInserted = statement.executeUpdate();
             return rowsInserted == 1;
@@ -46,7 +49,7 @@ public class DocumentRepository {
 
     public List<Document> findAll() {
         String sql = """
-                SELECT content, embedding::text
+                SELECT content, embedding::text AS embedding
                 FROM documents
                 ORDER BY id
                 """;
@@ -54,14 +57,17 @@ public class DocumentRepository {
         List<Document> documents = new ArrayList<>();
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
+             PreparedStatement statement =
+                     connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
                 String content = resultSet.getString("content");
-                String vectorText = resultSet.getString("embedding");
+                String vectorText =
+                        resultSet.getString("embedding");
 
-                documents.add(new Document(content, parseVector(vectorText)));
+                documents.add(
+                        new Document(content, parseVector(vectorText)));
             }
 
             return documents;
@@ -77,17 +83,27 @@ public class DocumentRepository {
             int limit,
             double minSimilarity) {
 
-        if (limit <= 0) {
-            throw new IllegalArgumentException("limit must be greater than 0");
+        if (queryVector == null || queryVector.length == 0) {
+            throw new IllegalArgumentException(
+                    "queryVector must not be empty");
         }
 
-        if (minSimilarity < 0.0 || minSimilarity > 1.0) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException(
+                    "limit must be greater than 0");
+        }
+
+        if (!Double.isFinite(minSimilarity)
+                || minSimilarity < 0.0
+                || minSimilarity > 1.0) {
             throw new IllegalArgumentException(
                     "minSimilarity must be between 0.0 and 1.0");
         }
 
         String sql = """
-                SELECT content, 1 - (embedding <=> CAST(? AS vector)) AS similarity
+                SELECT content,
+                       embedding::text AS embedding,
+                       1 - (embedding <=> CAST(? AS vector)) AS similarity
                 FROM documents
                 WHERE 1 - (embedding <=> CAST(? AS vector)) >= ?
                 ORDER BY embedding <=> CAST(? AS vector)
@@ -98,7 +114,8 @@ public class DocumentRepository {
         List<SearchResult> results = new ArrayList<>();
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
 
             statement.setString(1, vector);
             statement.setString(2, vector);
@@ -108,11 +125,19 @@ public class DocumentRepository {
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    String content = resultSet.getString("content");
-                    double similarity = resultSet.getDouble("similarity");
+                    String content =
+                            resultSet.getString("content");
+                    String vectorText =
+                            resultSet.getString("embedding");
+                    double similarity =
+                            resultSet.getDouble("similarity");
 
-                    Document document = new Document(content, new double[0]);
-                    results.add(new SearchResult(document, similarity));
+                    Document document = new Document(
+                            content,
+                            parseVector(vectorText));
+
+                    results.add(
+                            new SearchResult(document, similarity));
                 }
             }
 
@@ -124,7 +149,74 @@ public class DocumentRepository {
         }
     }
 
-    public void updateEmbedding(String content, double[] embedding) {
+    public List<SearchResult> searchByKeyword(
+            String query,
+            int limit) {
+
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException(
+                    "query must not be blank");
+        }
+
+        if (limit <= 0) {
+            throw new IllegalArgumentException(
+                    "limit must be greater than 0");
+        }
+
+        String sql = """
+                SELECT content,
+                       embedding::text AS embedding,
+                       ts_rank_cd(
+                           to_tsvector('english', content),
+                           plainto_tsquery('english', ?)
+                       ) AS score
+                FROM documents
+                WHERE to_tsvector('english', content)
+                      @@ plainto_tsquery('english', ?)
+                ORDER BY score DESC
+                LIMIT ?
+                """;
+
+        List<SearchResult> results = new ArrayList<>();
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setString(1, query);
+            statement.setString(2, query);
+            statement.setInt(3, limit);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String content =
+                            resultSet.getString("content");
+                    String vectorText =
+                            resultSet.getString("embedding");
+                    double score = resultSet.getDouble("score");
+
+                    Document document = new Document(
+                            content,
+                            parseVector(vectorText));
+
+                    results.add(
+                            new SearchResult(document, score));
+                }
+            }
+
+            return results;
+
+        } catch (SQLException exception) {
+            throw new DatabaseOperationException(
+                    "Failed to search documents by keyword",
+                    exception);
+        }
+    }
+
+    public void updateEmbedding(
+            String content,
+            double[] embedding) {
+
         String sql = """
                 UPDATE documents
                 SET embedding = CAST(? AS vector)
@@ -134,7 +226,8 @@ public class DocumentRepository {
         String vector = toVectorString(embedding);
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
 
             statement.setString(1, vector);
             statement.setString(2, content);
@@ -145,22 +238,28 @@ public class DocumentRepository {
                 throw new DatabaseOperationException(
                         "Expected to update one document, but updated "
                                 + updatedRows,
-                        null
-                );
+                        null);
             }
 
         } catch (SQLException exception) {
             throw new DatabaseOperationException(
-                    "Failed to update document embedding", exception);
+                    "Failed to update document embedding",
+                    exception);
         }
     }
 
     public boolean existsByContent(String content) {
-        String sql = "SELECT EXISTS " +
-                "(SELECT 1 FROM documents WHERE content = ?)";
+        String sql = """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM documents
+                    WHERE content = ?
+                )
+                """;
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
 
             statement.setString(1, content);
 
@@ -171,15 +270,20 @@ public class DocumentRepository {
 
         } catch (SQLException exception) {
             throw new DatabaseOperationException(
-                    "Failed to check whether document exists", exception);
+                    "Failed to check whether document exists",
+                    exception);
         }
     }
 
     public void deleteByContent(String content) {
-        String sql = "DELETE FROM documents WHERE content = ?";
+        String sql = """
+                DELETE FROM documents
+                WHERE content = ?
+                """;
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
 
             statement.setString(1, content);
             statement.executeUpdate();
@@ -191,6 +295,11 @@ public class DocumentRepository {
     }
 
     private String toVectorString(double[] embedding) {
+        if (embedding == null) {
+            throw new IllegalArgumentException(
+                    "Embedding must not be null");
+        }
+
         StringBuilder result = new StringBuilder("[");
 
         for (int i = 0; i < embedding.length; i++) {
@@ -206,7 +315,13 @@ public class DocumentRepository {
     }
 
     private double[] parseVector(String vectorText) {
-        String values = vectorText.substring(1, vectorText.length() - 1);
+        if (vectorText == null || vectorText.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Vector text must not be null or blank");
+        }
+
+        String values = vectorText.substring(
+                1, vectorText.length() - 1);
 
         if (values.isBlank()) {
             return new double[0];
@@ -216,7 +331,7 @@ public class DocumentRepository {
         double[] embedding = new double[parts.length];
 
         for (int i = 0; i < parts.length; i++) {
-            embedding[i] = Double.parseDouble(parts[i]);
+            embedding[i] = Double.parseDouble(parts[i].trim());
         }
 
         return embedding;

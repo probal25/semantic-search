@@ -60,5 +60,21 @@
       "D6": 3,
       "D12": 2
     }
+  },
+  {
+    "query": "My payment is taking too long to process",
+    "relevantDocumentIds": ["D6", "D12"],
+    "relevanceGrades": {
+      "D6": 3,
+      "D12": 2
+    }
+  },
+  {
+    "query": "My payment is stuck and hasn't gone through",
+    "relevantDocumentIds": ["D6", "D12"],
+    "relevanceGrades": {
+      "D6": 3,
+      "D12": 2
+    }
   }
 ]
